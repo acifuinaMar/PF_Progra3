@@ -14,6 +14,7 @@ import java.io.Serializable;
  */
 public class Cell implements Serializable {
     private static final long serialVersionUID = 4L;
+    private int x,y;
     private String content;
     private String formula;
     private Object value;
@@ -23,13 +24,21 @@ public class Cell implements Serializable {
     /**
      * Constructor que inicializa la celda vacia.
      */
-    public Cell() {
+    public Cell(int x, int y) {
+        this.x = x;
+        this.y = y;
         this.content = "";
         this.formula = "";
         this.value = "";
         this.type = CellType.EMPTY;
     }
 
+    public int getX(){
+        return x;
+    }
+    public int getY(){
+        return y;
+    }
     /**
      * Obtiene el contenido de la celda.
      * @return Texto de la celda.
