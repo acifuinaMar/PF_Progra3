@@ -160,4 +160,28 @@ public class SheetController {
     public void setWorkbook(Workbook workbook) {
         this.workbook = workbook;
     }
+
+    public double evaluarFormula(String formula, int row, int col) {
+        try {
+            formula = formula.trim();
+
+            // Elimina el signo '=' si lo tiene
+            if (formula.startsWith("=")) {
+                formula = formula.substring(1);
+            }
+
+            Object result = formulaParser.parseFormula(formula, row, col);
+
+            if (result instanceof Double) {
+                return (Double) result;
+            } else {
+                System.err.println("Fórmula no válida o no reconocida: " + formula);
+                return 0.0;
+            }
+        } catch (Exception e) {
+            System.err.println("Error al evaluar la fórmula: " + formula);
+            e.printStackTrace();
+            return 0.0;
+        }
+    }
 }
