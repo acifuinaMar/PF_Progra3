@@ -17,6 +17,7 @@ import controller.SheetController;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
+import model.Cell;
 
 public class SheetPanel extends JPanel {
     private JTable table;
@@ -97,7 +98,17 @@ public class SheetPanel extends JPanel {
         
         if (row >= 0 && col >= 0) {
             String formula = formulaField.getText();
-            controller.setCellValue(row, col, formula);
+            // Si es una fórmula de suma
+            if (formula.toLowerCase().startsWith("=suma(")) {
+                double resultado = controller.evaluarFormula(formula, row, col);
+                controller.setCellValue(row, col, String.valueOf(resultado));
+            } else if (formula.toLowerCase().startsWith("=multiplicacion(") || formula.toLowerCase().startsWith("=mult(")){
+                double resultado = controller.evaluarFormula(formula, row, col);
+                controller.setCellValue(row, col, String.valueOf(resultado));
+            } else {
+                controller.setCellValue(row, col, formula);
+            }
+
             tableModel.fireTableDataChanged();
             formulaField.setText("");
         }
@@ -139,9 +150,17 @@ public class SheetPanel extends JPanel {
         }
 
         @Override
+        public Object getValueAt(int row, int col) {
+            Cell cell = controller.getWorkbook()
+                                .getCurrentSheet()
+                                .getMatrix()
+                                .getCell(row, col);
+            return (cell != null && cell.getContent() != null) ? cell.getContent() : "";
+        }
+        /*@Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             return controller.getCellValue(rowIndex, columnIndex);
-        }
+        }*/
 
         @Override
         public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
