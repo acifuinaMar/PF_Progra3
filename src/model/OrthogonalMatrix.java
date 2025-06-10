@@ -15,19 +15,16 @@ import util.FormulaParser;
 
 public class OrthogonalMatrix implements Serializable {
     private static final long serialVersionUID = 3L;
-    private Cell[][] matrix;
-    private int rows;
-    private int cols;
+    private Cell head;
+    private int rows=20;
+    private int cols=20;
     private transient FormulaParser formulaParser;
 
     /**
      * Constructor que crea una matriz de 20x20 de celdas enlazadas.
      */
     public OrthogonalMatrix() {
-        this.rows = 20; // Tamaño fijo inicial
-        this.cols = 20;
-        this.matrix = new Cell[rows][cols];
-        initializeMatrix();
+        this.head = new Cell(0,0);
     }
 
     /**
@@ -36,30 +33,6 @@ public class OrthogonalMatrix implements Serializable {
      */
     public void setFormulaParser(FormulaParser parser) {
         this.formulaParser = parser;
-    }
-    
-    /**
-     * Inicializa la matriz con celdas vacias y las enlaza
-     */
-    private void initializeMatrix() {
-        // Crear todas las celdas
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                matrix[i][j] = new Cell();
-            }
-        }
-
-        // Establecer conexiones entre celdas
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                Cell current = matrix[i][j];
-                
-                if (i > 0) current.setUp(matrix[i-1][j]);
-                if (i < rows - 1) current.setDown(matrix[i+1][j]);
-                if (j > 0) current.setLeft(matrix[i][j-1]);
-                if (j < cols - 1) current.setRight(matrix[i][j+1]);
-            }
-        }
     }
 
     /**
@@ -71,21 +44,59 @@ public class OrthogonalMatrix implements Serializable {
      */
     public void setCellValue(int row, int col, String value) {
         if (row < 0 || col < 0 || row >= rows || col >= cols) return;
+        Cell cell = getOrCreateCell(row, col);
+        if (cell != null) {
+            cell.setContent(value);
         
-        Cell cell = matrix[row][col];
-        if (cell == null) return;
-        
-        cell.setContent(value);
-        
-        if (value != null && value.startsWith("=")) {
-            handleFormula(cell, value, row, col);
-        } else {
-            handlePlainValue(cell, value);
-        }
-        
+            if (value != null && value.startsWith("=")) {
+                handleFormula(cell, value, row, col);
+            } else {
+                handlePlainValue(cell, value);
+            }
         //notifyDependents(row, col);
+        }
     }
 
+    private Cell getOrCreateCell(int row, int col) {
+        // Crear o obtener la fila
+        Cell rowStart = getOrCreateRow(row);
+        
+        // Crear o obtener la columna
+        return getOrCreateColumn(rowStart, row, col);
+    }
+    
+    private Cell getOrCreateRow(int row) {
+        Cell current = head;
+        Cell prev = null;
+        
+        // Buscar la fila
+        for (int r = 0; r < row; r++) {
+            prev = current;
+            if (current.getDown() == null) {
+                current.setDown(new Cell(0, r+1));
+            }
+            current = current.getDown();
+        }
+        
+        return current;
+    }
+    
+    private Cell getOrCreateColumn(Cell rowStart, int row, int col) {
+        Cell current = rowStart;
+        Cell prev = null;
+        
+        // Buscar la columna
+        for (int c = 0; c < col; c++) {
+            prev = current;
+            if (current.getRight() == null) {
+                current.setRight(new Cell(c+1, row));
+            }
+            current = current.getRight();
+        }
+        
+        return current;
+    }
+    
     /**
      * Maneja el procesamiento de formula y su evaluacion con el parser.
      * @param cell Celda a evaluar.
@@ -173,7 +184,26 @@ public class OrthogonalMatrix implements Serializable {
         if (row < 0 || col < 0 || row >= rows || col >= cols) {
             return null;
         }
-        return matrix[row][col];
+
+        // Buscar fila
+        Cell rowStart = head;
+        for (int r = 0; r < row; r++) {
+            if (rowStart.getDown() == null) {
+                return null; // No existe la fila
+            }
+            rowStart = rowStart.getDown();
+        }
+
+        // Buscar columna
+        Cell current = rowStart;
+        for (int c = 0; c < col; c++) {
+            if (current.getRight() == null) {
+                return null; // No existe la columna
+            }
+            current = current.getRight();
+        }
+
+        return current;
     }
 
     /**
